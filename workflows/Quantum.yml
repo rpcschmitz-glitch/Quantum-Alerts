@@ -1,0 +1,30 @@
+name: Quantum alerts
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # elke 15 minuten
+  workflow_dispatch:          # knop om handmatig te starten
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install pandas numpy requests
+
+      # Onthoudt welke meldingen al verstuurd zijn, zodat je ze niet dubbel krijgt.
+      - uses: actions/cache@v4
+        with:
+          path: sent_alerts.json
+          key: sent-${{ github.run_id }}
+          restore-keys: sent-
+
+      - run: python quantum_alerts.py --once
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
